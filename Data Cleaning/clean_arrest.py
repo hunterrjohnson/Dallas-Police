@@ -1,6 +1,6 @@
 # Set working directory
 import os
-os.chdir('/Users/hunterjohnson/Dropbox/DPD ML/')
+os.chdir('/Users/hunterjohnson/Dropbox/Dallas Projects/')
 os.getcwd()
 
 # Load basic libraries
@@ -10,7 +10,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Get names of files in Arrest folder
-os.listdir('/Users/hunterjohnson/Dropbox/DPD ML/Data/Raw/Arrest')
+os.listdir('/Users/hunterjohnson/Dropbox/Dallas Projects/Data/Raw/Arrest')
 
 df = pd.read_stata('Data/Raw/Arrest/arrests_request_2010-2018.dta')
 
@@ -118,6 +118,13 @@ df.loc[df.incidentnum.str.contains('88255/2014'), 'incidentnum'] = '088255-2014'
 df.loc[df.incidentnum.str.contains('133979-204'), 'incidentnum'] = '133979-2014'
 df.loc[df.incidentnum.str.contains('01133117-2014'), 'incidentnum'] = '133117-2014'
 df.loc[df.incidentnum.str.contains('133619'), 'incidentnum'] = '133619-2014'
+
+# Count blank incidentnums; these presumably cannot merge with dispatch data
+print("Number of rows:", len(df))
+print("Number of rows where incidentnum is missing:", len(df.loc[df['incidentnum']=='']))
+print("Proportion missing:", len(df.loc[df['incidentnum']==''])/len(df))
+df = df.loc[df['incidentnum']!='']
+print('Number of rows w/ blanks removed:', len(df))
 
 # Note that many arrest_dates are missing but not book dates
 df['arrest_date'].isna().sum()
