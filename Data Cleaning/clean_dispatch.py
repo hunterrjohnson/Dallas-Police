@@ -1,6 +1,6 @@
 # Set working directory
 import os
-os.chdir('/Users/hunterjohnson/Dropbox/DPD ML/')
+os.chdir('/Users/hunterjohnson/Dropbox/Dallas Projects/')
 os.getcwd()
 
 # Load basic libraries
@@ -10,11 +10,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Get names of files in dispatch folder
-os.listdir('/Users/hunterjohnson/Dropbox/DPD ML/Data/Raw/Dispatch')
+os.listdir('/Users/hunterjohnson/Dropbox/Dallas Projects/Data/Raw/Dispatch')
 
 # Get file names for years 2013-2018
 from glob import glob
-files = glob('/Users/hunterjohnson/Dropbox/DPD ML/Data/Raw/Dispatch/201[3-8]_CALLS_?.csv')
+files = glob('/Users/hunterjohnson/Dropbox/Dallas Projects/Data/Raw/Dispatch/201[3-8]_CALLS_?.csv')
 files
 
 # Read dispatch files into data frame
@@ -112,23 +112,18 @@ df.loc[df['md_dispatch'] < datetime.timedelta(minutes=0), 'md_dispatch_flag'] = 
 df.loc[df['md_dispatch'] > datetime.timedelta(hours=12, minutes=0, seconds=0), 'md_dispatch_flag'] = 1
 print("Number of flagged time differences:", df['md_dispatch_flag'].sum())
 
-# Convert Case_Number to string
-df['new_cn'] = df['Case_Number'].astype(str).str.replace('.0', '')
+# Standard format is similar to 123456-2014 (length 11)
+df['new_cn'] = df['Case_Number']
+df['new_cn'].str.len().value_counts()
 
-# Should be good up to and including this point
-df.loc[~df.new_cn.str.contains('-'), 'new_cn'] = df['new_cn'] + '-' + df['year']
+# Remove leading zeros if string length is 12
+df.loc[df['new_cn'].str.len() == 12, 'new_cn'] = df['new_cn'].str.strip('0')
 
-# Add leading zeros to Case_Number
-df['new_cn'] = df['new_cn'].apply('{:0>11}'.format)
+# Add hyphen and year if string length is 6
+df.loc[df['new_cn'].str.len() == 6, 'new_cn'] = df['new_cn'].astype(str) + '-' + df['year'].astype(str)
 
-# Replace entries containing nan with actual NaN
-df.loc[df['new_cn'].str.contains('nan'), 'new_cn'] = ''
-
-# Get string length of new_cn
-df['tc_str_len'] = df.new_cn.astype(str).apply(len)
-
-# String lengths of 4 and 5 need to have response date added
-df['tc_str_len'].value_counts()
+# Add leading 0, hyphen and year if string length is 5
+df.loc[df['new_cn'].str.len() == 5, 'new_cn'] = '0' + df['new_cn'].astype(str) + '-' + df['year'].astype(str)
 
 # Count observations with missing Inc_num; drop these
 print("Number of missing dispatch numbers:", df.Inc_num.isna().sum())
