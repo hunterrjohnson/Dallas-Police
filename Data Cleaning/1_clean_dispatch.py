@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 # Get names of files in dispatch folder
 os.listdir('/Users/hunterjohnson/Dropbox/Dallas Projects/Data/Raw/Dispatch')
 
-# Get file names for years 2013-2018
+# Get file names for years 2014-2018
 from glob import glob
-files = glob('/Users/hunterjohnson/Dropbox/Dallas Projects/Data/Raw/Dispatch/201[3-8]_CALLS_?.csv')
+files = glob('/Users/hunterjohnson/Dropbox/Dallas Projects/Data/Raw/Dispatch/201[4-8]_CALLS_?.csv')
 files
 
 # Read dispatch files into data frame
