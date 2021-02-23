@@ -149,9 +149,61 @@ table(uf$year)
 table(uf$month)
 table(uf$day)
 
+# Read requested force data
+df2013a <- read_excel("Data/Raw/Force_Requested/UOF2013_Redacted_A.xlsx")
+df2013b <- read_excel("Data/Raw/Force_Requested/UOF2013_Redacted_B.xlsx")
+df2013c <- read_excel("Data/Raw/Force_Requested/UOF2013_Redacted_C.xlsx")
+df2014a <- read_excel("Data/Raw/Force_Requested/UOF2014_Redacted_A.xlsx")
+df2014b <- read_excel("Data/Raw/Force_Requested/UOF2014_Redacted_B_R.xlsx")
+df2015a <- read_excel("Data/Raw/Force_Requested/UOF2015_Redacted_A.xlsx")
+df2015b <- read_excel("Data/Raw/Force_Requested/UOF2015_Redacted_B.xlsx")
+df2015c <- read_excel("Data/Raw/Force_Requested/UOF2015_Redacted_C.xlsx")
+df2016a <- read_excel("Data/Raw/Force_Requested/UOF2016_Redacted_A.xlsx")
+df2016b <- read_excel("Data/Raw/Force_Requested/UOF2016_Redacted_B.xlsx")
+df2017a <- read_excel("Data/Raw/Force_Requested/UOF2017_Redacted_A_R.xlsx")
+df2017b <- read_excel("Data/Raw/Force_Requested/UOF2017_Redacted_B.xlsx")
+df2017c <- read_excel("Data/Raw/Force_Requested/UOF2017_Redacted_C.xlsx")
+df2018a <- read_excel("Data/Raw/Force_Requested/UOF2018_Redacted_A_R.xlsx")
+df2018b <- read_excel("Data/Raw/Force_Requested/UOF2018_Redacted_B_R.xlsx")
+
+# Delete extra columns of NAs
+df2014a <- df2014a[,1:12]
+df2015a <- df2015a[,1:12]
+df2018b <- df2018b[,1:12]
+
+# Combine data sets
+uf_req <- rbind(df2013a,df2013b,df2013c,df2014a,df2014b,df2015a,df2015b,df2015c,
+            df2016a,df2016b,df2017a,df2017b,df2017c,df2018a,df2018b)
+
+rm(df2013a,df2013b,df2013c,df2014a,df2014b,df2015a,df2015b,df2015c,
+   df2016a,df2016b,df2017a,df2017b,df2017c,df2018a,df2018b)
+
+uf_req <- uf_req[which(grepl('/', uf_req$`Received Date`)),] # Delete rows that don't contain actual dates
+
+uf_req$`Received Date` <- as.Date(uf_req$`Received Date`, format = "%m/%d/%y") # Convert date to better format
+
+setnames(uf_req, old = c('Service/Incident Number','IA No','Badge','Received Date'), new = c('incidentnum','iano','badge','rec.date'))
+
+# Merge both force data sets; only need incidentnum from uf_req
+uf <- left_join(uf, unique(uf_req[,c('iano','incidentnum')]), by = 'iano')
+
+# Fix some incidentnums; note that incidentnums prior to mid-2014 have a different format
+uf$incidentnum <- gsub("[a-zA-Z]", NA, uf$incidentnum)
+uf$incidentnum <- gsub("20144", '2014', uf$incidentnum)
+uf$incidentnum <- gsub("20107", '2017', uf$incidentnum)
+uf$incidentnum <- gsub("20108", '2018', uf$incidentnum)
+uf$incidentnum <- gsub("20177", '2017', uf$incidentnum)
+uf$incidentnum <- gsub(",", '', uf$incidentnum)
+uf$incidentnum <- ifelse(nchar(uf$incidentnum)==12, substr(uf$incidentnum, 2, 12), uf$incidentnum)
+
+# Drop 2013 due to problems with incidentnum
+uf <- uf[which(uf$year > 2013),]
+
 # Check numbers of incidents and civilians
 uniqueN(uf$iano)
 uniqueN(uf$civnum)
+nrow(uf)
+head(uf)
 
 # Save data
 write_csv(uf, 'Data/Clean/force.csv')
