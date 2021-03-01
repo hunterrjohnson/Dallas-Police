@@ -226,39 +226,6 @@ df['latitude'] = df['latitude'].str.slice(0, 2) + '.' + df['latitude'].str.slice
 df['longitude'] = df['longitude'].astype(str).str.rstrip('.0')
 df['longitude'] = '-' + df['longitude'].str.slice(0, 2) + '.' + df['longitude'].str.slice(2)
                          
-# Density of time between call and dispatch
-sns.distplot(df['md_dispatch'].loc[df['md_dispatch_flag'] == 0])
-plt.title("Time Between Call and Dispatch")
-plt.xlabel('Minutes')
-plt.xlim(-10,150)
-plt.axvline(x = np.mean(df['md_dispatch'].loc[df['md_dispatch_flag'] == 0]),
-            linewidth=1, color='r', linestyle='dashed', label='mean') # mean
-plt.axvline(x = np.median(df['md_dispatch'].loc[df['md_dispatch_flag'] == 0]),
-            linewidth=1, color='g', linestyle='dashed', label = 'median') # mean
-plt.legend()
-plt.grid(True)
-plt.savefig('Results/time_btw_call_dispatch.png')
-
-# Create call level df for some variables
-call_df = df[['dispatchnum','n_units','n_offs']].copy()
-call_df = call_df[call_df.duplicated() == False]
-
-# Plot distribution of n_offs and n_units
-fig, axes = plt.subplots(ncols=2, figsize=(20,5))
-sns.countplot(x = 'n_units', data = call_df, order=sorted(pd.value_counts(call_df['n_units']).iloc[:10].index), ax = axes[0])
-axes[0].set_title("Counts of Calls by Number of Units Dispatched")
-axes[0].set_xlabel('Number of Units')
-axes[0].set_ylabel('Count')
-axes[0].grid()
-axes[0].set_axisbelow(True)
-sns.countplot(x = 'n_offs', data = call_df, order=sorted(pd.value_counts(call_df['n_offs']).iloc[:10].index), ax = axes[1])
-axes[1].set_title("Counts of Calls by Number of Officers Dispatched")
-axes[1].set_xlabel('Number of Officers')
-axes[1].set_ylabel('Count')
-axes[1].grid()
-axes[1].set_axisbelow(True)
-plt.savefig('Results/n_units_officers.png')
-
 # Save data
 df.to_csv('1_Data/2_Clean/dispatch.csv')
 
