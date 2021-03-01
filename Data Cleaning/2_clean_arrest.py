@@ -10,9 +10,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Get names of files in Arrest folder
-os.listdir('/Users/hunterjohnson/Dropbox/Dallas Projects/Data/Raw/Arrest')
+os.listdir('/Users/hunterjohnson/Dropbox/Dallas Projects/1_Data/1_Raw/Arrest')
 
-df = pd.read_csv('Data/Raw/Arrest/Police_Arrests_7_19_19.csv')
+df = pd.read_csv('1_Data/1_Raw/Arrest/Police_Arrests_7_19_19.csv')
 
 # Keep years from 2014-2018
 df = df[df['ArrestYr'].isin(['2014','2015','2016','2017','2018'])]
@@ -110,13 +110,27 @@ df.columns = df.columns.str.lower()
 
 # Reorder columns, dropping some
 df = df.reindex(columns=['incidentnum','arrestnum','arrest_year','arrest_date','arrest_time','arrest_dow',
-                         'year','month','day','civ_name','civ_age','civ_birthplace','civ_race','civ_sex',
+                         'year','month','day','hour','civ_name','civ_age','civ_birthplace','civ_race','civ_sex',
                          'civ_home_beat','arrest_loc','arrest_zip','arrest_city','arrest_state',
                          'arrest_outside_tx','arrest_ra','arrest_beat','arresting_off1','arresting_off2',
                          'arrest_premises','arrest_weapon','n_arrested'])
+
+# Reformat arrest date
+df['arrest_date'] = df['arrest_date'].str.slice(0,2)+'-'+df['arrest_date'].str.slice(3,5)+'-'+df['arrest_date'].str.slice(6,10)
+
+# Convert to integer
+df['arrest_zip'] = df['arrest_zip'].astype('Int64')
+df['arrest_ra'] = df['arrest_ra'].astype('Int64')
+df['arrest_beat'] = df['arrest_beat'].astype('Int64')
+
+# Convert to uppercase
+df['civ_race'] = df['civ_race'].str.upper()
+df['civ_sex'] = df['civ_sex'].str.upper()
+df['arrest_premises'] = df['arrest_premises'].str.upper()
+df['arrest_weapon'] = df['arrest_weapon'].str.upper()
                          
 # Save data
-df.to_csv('Data/Clean/arrest.csv')
+df.to_csv('1_Data/2_Clean/arrest.csv')
 
 
 
