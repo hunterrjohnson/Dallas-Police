@@ -51,8 +51,8 @@ df.ArrestNumber.astype(str).apply(len).value_counts()
 # Check string length of IncidentNum (these matter for merge)
 df.IncidentNum.astype(str).apply(len).value_counts()
 
-# Remove leading zeros in IncidentNum
-df.loc[df['IncidentNum'].str.len() == 12, 'IncidentNum'] = df['IncidentNum'].str.strip('0')
+# Remove leading zeros
+df['IncidentNum'] = df['IncidentNum'].str.strip('0')
 
 # Manually fix the rest if possible; a trivial amount will not get fixed
 df.loc[df['IncidentNum'].str.contains('133979-204'), 'IncidentNum'] = '133979-2014'
