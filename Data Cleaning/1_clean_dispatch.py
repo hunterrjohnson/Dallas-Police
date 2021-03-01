@@ -10,11 +10,11 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Get names of files in dispatch folder
-os.listdir('/Users/hunterjohnson/Dropbox/Dallas Projects/Data/Raw/Dispatch')
+os.listdir('/Users/hunterjohnson/Dropbox/Dallas Projects/1_Data/1_Raw/Dispatch')
 
 # Get file names for years 2014-2018
 from glob import glob
-files = glob('/Users/hunterjohnson/Dropbox/Dallas Projects/Data/Raw/Dispatch/201[4-8]_CALLS_?.csv')
+files = glob('/Users/hunterjohnson/Dropbox/Dallas Projects/1_Data/1_Raw/Dispatch/201[4-8]_CALLS_?.csv')
 files
 
 # Read dispatch files into data frame
@@ -30,6 +30,7 @@ df = df[df.Division != 'Jack Evans HQ Bldg'] # remove strange entries for Divisi
 df = df[df.Division != 'Homeland Security']
 df = df[df.Division != 'Traffic']
 df = df[df['Division'].notna()] # drop trivial number with missing Division
+df['Division'] = df['Division'].str.upper()
 
 # Fix Sector entries
 print("Values of Sector: ", df['Sector'].unique())
@@ -117,13 +118,13 @@ df['new_cn'] = df['Case_Number']
 df['new_cn'].str.len().value_counts()
 
 # Remove leading zeros if string length is 12
-df.loc[df['new_cn'].str.len() == 12, 'new_cn'] = df['new_cn'].str.strip('0')
+df.loc[df['new_cn'].str.len() == 12, 'new_cn'] = df['new_cn'].str.strip('0').astype(str)
 
 # Add hyphen and year if string length is 6
-df.loc[df['new_cn'].str.len() == 6, 'new_cn'] = df['new_cn'].astype(str) + '-' + df['year'].astype(str)
+df.loc[df['Case_Number'].str.len()==6, 'new_cn'] = df.loc[df['Case_Number'].str.len()==6, 'new_cn'].astype(int).astype(str) + '-' + df['year'].astype(str)
 
 # Add leading 0, hyphen and year if string length is 5
-df.loc[df['new_cn'].str.len() == 5, 'new_cn'] = '0' + df['new_cn'].astype(str) + '-' + df['year'].astype(str)
+df.loc[df['Case_Number'].str.len()==5, 'new_cn'] = '0' + df.loc[df['Case_Number'].str.len()==5, 'new_cn'].astype(int).astype(str) + '-' + df['year'].astype(str)
 
 # Count observations with missing Inc_num; drop these
 print("Number of missing dispatch numbers:", df.Inc_num.isna().sum())
@@ -188,6 +189,9 @@ df.rename(columns={'Inc_num': 'dispatchnum',
 # Convert column names to lowercase
 df.columns= df.columns.str.lower()
 
+# Convert column names to lowercase
+df.columns= df.columns.str.lower()
+
 # Drop columns
 df.drop(['priority_desc','agency_type','md_dispatch','case_number','tc_str_len'], axis=1, inplace=True)
 
@@ -197,6 +201,9 @@ df['md_dispatch'] = df['assigned_min'] - df['called_min']
 # Convert beat to integer
 df['beat'] = df['beat'].astype('Int64')
 
+# Convert sector to integer
+df['sector'] = df['sector'].astype('Int64')
+
 # Reorder columns
 df = df.reindex(columns=['dispatchnum','incidentnum','date','year','month','day','hour',
                          'problem','priority','incident_type','unit_dispo','event_dispo',
@@ -205,6 +212,18 @@ df = df.reindex(columns=['dispatchnum','incidentnum','date','year','month','day'
                          'badge','n_units','n_offs','disp_order','called_min','assigned_min',
                          'enroute_min','arrived_min','cleared_min','md_dispatch','md_dispatch_flag',
                          'time_called','time_assigned','time_enroute','time_arrived','time_cleared',])
+
+# Convert strings to uppercase
+df['unit_dispo'] = df['unit_dispo'].str.upper()
+df['event_dispo'] = df['event_dispo'].str.upper()
+df['address'] = df['address'].str.upper()
+df['caller_loc'] = df['caller_loc'].str.upper()
+
+# Clean up latitude/longitude
+df['latitude'] = df['latitude'].astype(str).str.rstrip('.0')
+df['latitude'] = df['latitude'].str.slice(0, 2) + '.' + df['latitude'].str.slice(2)
+df['longitude'] = df['longitude'].astype(str).str.rstrip('.0')
+df['longitude'] = '-' + df['longitude'].str.slice(0, 2) + '.' + df['longitude'].str.slice(2)
                          
 # Density of time between call and dispatch
 sns.distplot(df['md_dispatch'].loc[df['md_dispatch_flag'] == 0])
@@ -240,7 +259,7 @@ axes[1].set_axisbelow(True)
 plt.savefig('Results/n_units_officers.png')
 
 # Save data
-df.to_csv('Data/Clean/dispatch.csv')
+df.to_csv('1_Data/2_Clean/dispatch.csv')
 
 
 
