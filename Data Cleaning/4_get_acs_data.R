@@ -6,19 +6,22 @@ lapply(c('tigris','acs','sf','raster'), library, character.only = TRUE)
   !('%in%'(x,y))
 }
 
-setwd('/Users/hunterjohnson/Dropbox/Dallas Police CJL')
+setwd('/Users/hunterjohnson/Dropbox/Dallas Projects')
 
 #===============================================================================
 
 # Read call data and get lat/lons
-calls <- haven::read_dta("2-stata_data/DPD_calls_for_service.dta")
-calls <- calls[, c('inc_id','cfs_lon','cfs_lat')]
+calls <- data.table::fread("1_Data/2_Clean/dispatch.csv")
+calls$V1 <- NULL
+calls <- calls[, c('dispatchnum','longitude','latitude')]
+calls$longitude <- as.numeric(calls$longitude)
+calls$latitude <- as.numeric(calls$latitude)
 calls <- unique(calls)
-calls <- calls[which(!is.na(calls$cfs_lon)),]
-calls <- calls[which(!is.na(calls$cfs_lat)),]
+calls <- calls[which(!is.na(calls$longitude)),]
+calls <- calls[which(!is.na(calls$latitude)),]
 
 # Write calls
-readr::write_csv(calls, '1-raw_data/Dallas_Blockgroups/calls_latlons.csv')
+readr::write_csv(calls, '1_Data/1_Raw/Dallas_Blockgroups/calls_latlons.csv')
 
 api.key.install('a96bec964e4ba4c500e72bb55ce34cb098714c23') # Census API key
 dallas_geo <- geo.make(state = 'TX', county = 'Dallas', tract = '*', block.group = '*') # geo.make required to retrieve data
@@ -38,7 +41,7 @@ dat <- dat %>% mutate(state = dallas_bgdata@geography$state,
                       blockgroup = dallas_bgdata@geography$blockgroup)
 
 # Write raw data to csv
-readr::write_csv(dat, '1-raw_data/Dallas_Blockgroups/dallas_bg_acs_raw.csv')
+readr::write_csv(dat, '1_Data/1_Raw/Dallas_Blockgroups/dallas_bg_acs_raw.csv')
 
 # Rename variables
 # - B02001_002: white alone
@@ -67,7 +70,7 @@ summary(nchar(dallas_shp$TRACTCE))
 summary(nchar(dat$tract))
 
 # Write shapefile
-shapefile(as_Spatial(st_as_sf(dallas_shp)), filename = '1-raw_data/Dallas_Blockgroups/dallas_bg_shapefile.shp', overwrite = TRUE)
+shapefile(as_Spatial(st_as_sf(dallas_shp)), filename = '1_Data/1_Raw/Dallas_Blockgroups/dallas_bg_shapefile.shp', overwrite = TRUE)
 
 # Add leading zeros to df tract for merge with dallas_shp
 dat$tract <- ifelse(nchar(dat$tract) == 3, paste0('000', dat$tract),
@@ -94,8 +97,7 @@ df <- df[,c(11,6,7,8,9,1,2,3,4,5,10,13,14,15,16,12)]
 
 rm(dallas_bgdata, dallas_geo, dallas_shp, dat)
 
-setnames(calls, old = c('cfs_lon','cfs_lat'), new = c('longitude','latitude'))
-calls$longitude <- paste0('-', calls$longitude) # Add negative sign to longitude
+# Convert to sf file
 calls <- st_as_sf(calls, coords = c('longitude','latitude'), remove = FALSE, crs = 4326) # Get coordinates for spatial join
 
 # Merge blockgroup data to calls by spatial join
@@ -106,7 +108,7 @@ nrow(calls[which(is.na(calls$GEOID)),]) / nrow(calls)
 
 # Write clean block group data
 calls$geometry <- NULL
-haven::write_dta(calls, '2-stata_data/DPD_blockgroups.dta')
+readr::write_csv(calls, '1_Data/2_Clean/blockgroups.csv')
 
 
 
