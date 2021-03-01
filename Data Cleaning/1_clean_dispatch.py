@@ -117,14 +117,15 @@ print("Number of flagged time differences:", df['md_dispatch_flag'].sum())
 df['new_cn'] = df['Case_Number']
 df['new_cn'].str.len().value_counts()
 
-# Remove leading zeros if string length is 12
-df.loc[df['new_cn'].str.len() == 12, 'new_cn'] = df['new_cn'].str.strip('0').astype(str)
-
 # Add hyphen and year if string length is 6
 df.loc[df['Case_Number'].str.len()==6, 'new_cn'] = df.loc[df['Case_Number'].str.len()==6, 'new_cn'].astype(int).astype(str) + '-' + df['year'].astype(str)
 
 # Add leading 0, hyphen and year if string length is 5
 df.loc[df['Case_Number'].str.len()==5, 'new_cn'] = '0' + df.loc[df['Case_Number'].str.len()==5, 'new_cn'].astype(int).astype(str) + '-' + df['year'].astype(str)
+
+# Remove leading zeros
+df['new_cn'] = df['new_cn'].str.strip('0').astype(str)
+df['new_cn'].str.len().value_counts()
 
 # Count observations with missing Inc_num; drop these
 print("Number of missing dispatch numbers:", df.Inc_num.isna().sum())
