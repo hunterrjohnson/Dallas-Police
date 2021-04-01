@@ -6,13 +6,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import matplotlib.mlab as mlab
-import matplotlib.patches as mpatches
 import matplotlib
 import time
-
-from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA, TruncatedSVD
 
 %matplotlib inline
 
@@ -34,98 +29,44 @@ plt.xlabel('Force Used')
 plt.ylabel('Count')
 plt.figure(figsize=(12,4))
 
-# Resample data to have balanced classes
-df = df.sample(frac=1)
-
-df_force = df.loc[df['force_used']==1]
-df_noforce = df.loc[df['force_used']==0][:3234]
-df_bal = pd.concat([df_force, df_noforce])
-
-df_bal = df_bal.sample(frac=1, random_state=123)
-
-# Classes are now balanced
-print('Counts of force_used:\n', df_bal.force_used.value_counts(), sep='')
-print('\n')
-print('Percentages:\n', df_bal.force_used.value_counts()/len(df_bal), sep='')
-
-sns.countplot(x='force_used', data=df_bal)
-plt.title('Class Distribution:\n 0: Force Not Used | 1: Force Used')
-plt.xlabel('Force Used')
-plt.ylabel('Count')
-plt.figure(figsize=(12,4))
-
-# Correlation matrices
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(24,20))
-
-# Imbalanced
+# Correlation matrix
 df_corr = df.corr()
-sns.heatmap(df_corr, cmap='coolwarm_r', annot_kws={'size':20}, ax=ax1)
-ax1.set_title('Imbalanced Correlation Matrix')
+sns.heatmap(df_corr, cmap='coolwarm_r', annot_kws={'size':20})
+plt.title('Correlation Matrix')
+plt.figure(figsize=(12,10))
 
-# Balanced
-df_bal_corr = df_bal.corr()
-sns.heatmap(df_bal_corr, cmap='coolwarm_r', annot_kws={'size':20}, ax=ax2)
-ax2.set_title('Balanced Correlation Matrix')
-plt.show()
+# One-Hot Encoding
+df = pd.get_dummies(df, columns=['year','month','day','hour','problem',
+                                 'incident_type','division'], drop_first=True)
 
-cols_to_keep = ['reported_inc','hour','priority','off_initiated','markout',
-                'shelter_loc','loc_freq','n_units','n_offs','md_dispatch',
-                'medhhinc','lessthanhs','bg_prop_white','bg_prop_black',
-                'bg_prop_hisp','bg_prop_other','n_arrested','force_used']
-df_num = df_bal[cols_to_keep]
+# Keep only numeric columns for classification
+df = df.select_dtypes(['number'])
+df = df.dropna(axis=0)
 
-# Simple clustering methods using numeric variables
-df_num = df_num.dropna()
-X = df_num.drop('force_used', axis=1)
-y = df_num['force_used']
+# Split data
+from sklearn.model_selection import train_test_split
+X = df.drop('force_used', axis=1)
+y = df['force_used']
 
-# t-SNE algorithm
-t0 = time.time()
-X_reduced_tsne = TSNE(n_components=2, random_state=123).fit_transform(X.values)
-t1 = time.time()
-print('t-SNE took {:2} seconds'.format(t1-t0))
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
 
-# PCA algorithm
-t0 - time.time()
-X_reduced_pca = PCA(n_components=2, random_state=123).fit_transform(X.values)
-t1 = time.time()
-print('PCA took {:2} seconds'.format(t1-t0))
+# Fit logistic model
+from sklearn.linear_model import LogisticRegression
+model = LogisticRegression()
+model.fit(X_train, y_train) # fit model
+model.score(X_test, y_test) # model accuracy
 
-# Truncated SVD algorithm
-t0 = time.time()
-X_reduced_svd = TruncatedSVD(n_components=2, algorithm='randomized', random_state=123).fit_transform(X.values)
-t1 = time.time()
-print('Truncated SVD took {:2} seconds'.format(t1-t0))
+# Predict on test set
+y_pred = model.predict(X_test)
 
-fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24,6))
-fig.suptitle('Clusters Using Dimensionality Reduction')
+# Confusion matrix
+from sklearn.metrics import confusion_matrix
+conf_matrix = confusion_matrix(y_test, y_pred)
+print(conf_matrix)
 
-blue_patch = mpatches.Patch(color='#0A0AFF', label='No Force')
-red_patch = mpatches.Patch(color='#AF0000', label='Force')
+# Other performance metrics
+from sklearn.metrics import classification_report
+print(classification_report(y_test, y_pred))
 
-# t-SNE scatter plot
-ax1.scatter(X_reduced_tsne[:,0], X_reduced_tsne[:,1], c=(y==0),
-            cmap='coolwarm', label='No Force', linewidths=2)
-ax1.scatter(X_reduced_tsne[:,0], X_reduced_tsne[:,1], c=(y==1),
-            cmap='coolwarm', label='Force', linewidths=2)
-ax1.set_title('t-SNE')
-ax1.grid(True)
-ax1.legend(handles=[blue_patch, red_patch])
 
-# PCA scatter plot
-ax2.scatter(X_reduced_pca[:,0], X_reduced_pca[:,1], c=(y==0),
-            cmap='coolwarm', label='No Force', linewidths=2)
-ax2.scatter(X_reduced_pca[:,0], X_reduced_pca[:,1], c=(y==1),
-            cmap='coolwarm', label='Force', linewidths=2)
-ax2.set_title('PCA')
-ax2.grid(True)
-ax2.legend(handles=[blue_patch, red_patch])
 
-# Truncated SVD scatter plot
-ax3.scatter(X_reduced_svd[:,0], X_reduced_svd[:,1], c=(y == 0), cmap='coolwarm', label='No Force', linewidths=2)
-ax3.scatter(X_reduced_svd[:,0], X_reduced_svd[:,1], c=(y == 1), cmap='coolwarm', label='Force', linewidths=2)
-ax3.set_title('Truncated SVD')
-ax3.grid(True)
-ax3.legend(handles=[blue_patch, red_patch])
-
-plt.show()
