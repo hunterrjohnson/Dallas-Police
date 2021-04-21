@@ -106,9 +106,15 @@ calls <- st_join(calls, left=TRUE, st_as_sf(df, crs=4326))
 # Check number of rows with missing block group data
 nrow(calls[which(is.na(calls$GEOID)),]) / nrow(calls)
 
-# Write clean block group data
 calls$geometry <- NULL
-readr::write_csv(calls, '1_Data/2_Clean/blockgroups.csv')
+
+# Assume calls assigned to multiple blockgroups are in most populous one
+calls$pop <- calls$white+calls$black+calls$hispanic+calls$other # population total
+calls <- calls %>% group_by(inc_id) %>% mutate(maxpop = max(pop)) %>% ungroup()
+calls <- calls[which(calls$maxpop==calls$pop),]
+
+# Write clean block group data
+haven::write_dta(calls, '2-stata_data/DPD_blockgroups.dta')
 
 
 
