@@ -58,6 +58,6 @@ df <- df[, c(1:24,42:48,25:26,51:52,27:41,53:59,60:61,49:50)]
 
 # Write data
 fwrite(df, '1_Data/2_Clean/analysis.csv')
-
+haven::write_dta(df, '1_Data/2_Clean/analysis.dta')
 
 
